@@ -25,8 +25,8 @@ public class Bidder{
 		in_port = inPor;
 		out_port = outPor;
 
-		// Creates new Auctioneer object
 		auctioneer = new Auctioneer();
+
 		createServerSock();
 		acceptServerSock();
 		letsPause();
@@ -40,12 +40,10 @@ public class Bidder{
 
 	// Create server socket
 	private void createServerSock(){
-		// Create the server socket with the current port
 		try {
 			in_ss = new ServerSocket(in_port);
 
-			// Print status
-			System.out.println("Auctioneer's socket (Local Host: "+localhost+", Port number: "+in_port+") is listening....");
+			System.out.println("Bidder: " +in_port+ " of distributed auction is active ....");
 		}
 		catch (IOException e){
 			System.out.println("Socket could not be opened: "+e);
@@ -57,19 +55,17 @@ public class Bidder{
 
 	// Accept server socket
 	private void acceptServerSock(){
-		// Accept the server socket and the token
 		try {
 			in_soc = in_ss.accept();
 
-			// Confirm that token has been received
-			System.out.println("Auctioneer ("+in_port+ ") has received the token back");
+			System.out.println("Bidder: "+in_port+ " has received the token.");
 		}
 		catch (IOException e){
 			System.out.println("Connection could not be made: "+e);
 		}
 	}
 
-	// Have a wee pause before the next bit
+	// Have a pause before the next bit
 	private void letsPause(){
 		try{
 			Thread.sleep(1000);
@@ -84,12 +80,10 @@ public class Bidder{
 
 	// Reading bid.txt and deciding to bid or not
 	private void bidding(){
-		// Call to Auctioneer to read current bid on file
 		try {
 			the_bid = auctioneer.getThe_bid();
 
-			// Print status
-			System.out.println("Node: "+in_port+" is reading the bid file");
+			System.out.println("Bidder: "+in_port+" is reading the bid file");
 		}
 		catch (Exception e){
 			System.out.println("Could not read file bid.txt: "+e);
@@ -102,13 +96,12 @@ public class Bidder{
 
 			if (randNum == 1){
 				the_bid += 10;
-				auctioneer.setThe_bid(the_bid); // Make a bid
+				auctioneer.setThe_bid(the_bid);
 
-				// Print confirmation of bid
-				System.out.println("Node "+in_port+":  my bid is "+the_bid);
+				System.out.println("Bidder "+in_port+":  my bid is "+the_bid);
 			}
 			else {
-				System.out.println("Node "+in_port+": no bid");
+				System.out.println("Bidder "+in_port+": no bid");
 			}
 		}
 		catch (IllegalArgumentException e){
@@ -118,12 +111,10 @@ public class Bidder{
 
 	// Close the server socket
 	private void closeServerSock(){
-		// Close the current socket
 		try {
-			in_ss.close();
+			in_soc.close();
 
-			// Confirm that Auctioneer has the token back
-			System.out.println("Auctioneer: " +in_port+ " :: received token back");
+			System.out.println("Socket is now closed");
 		}
 		catch (IOException e){
 			System.out.println("Cannot close Server Socket: "+e);
@@ -133,7 +124,6 @@ public class Bidder{
 
 	// Create the socket to the next node
 	private void createNodeSockOut(){
-		// Create a new socket to send the token to
 		try {
 			out_soc = new Socket(localhost, out_port);
 		}
@@ -146,8 +136,6 @@ public class Bidder{
 		catch (IllegalArgumentException e){
 			System.out.println("Incorrect Port number: "+e);
 		}
-
-		// Check success
 		sockConnectSuccess();
 	}
 
@@ -155,7 +143,7 @@ public class Bidder{
 	private void sockConnectSuccess(){
 		try {
 			if (out_soc.isConnected()){
-				// Confirm that connection was accepted
+
 				System.out.println("Auctioneer: " +in_port+ " :: sent token to "+out_port);
 			}
 		}
@@ -166,23 +154,18 @@ public class Bidder{
 
 	// Close new socket
 	private void closeNodeSockOut(){
-		// Close the new socket (pass the token)
 		try {
 			out_soc.close();
 		}
 		catch (IOException e){
 			System.out.println("Socket failed to close: "+e);
 		}
-		// call to pause
 		letsPause();
-
-		// Call to check success
 		sockCloseSuccess();
 	}
 
-	// Check closed successfully
+	// Check socket closed successfully
 	private void sockCloseSuccess(){
-		// Check that the connection was successfully closed
 		try {
 			if (out_soc.isClosed()){
 				System.out.println("Socket to bidder "+out_port+" is now closed.");
@@ -195,7 +178,6 @@ public class Bidder{
 	}
 
     public static void main (String[] args){
-	// receive own port and next port in the ring at launch time
 	if (args.length != 2) {
 	    System.out.print("Usage: Bidder [port number] [forward port number]");
 	    System.exit(1);
