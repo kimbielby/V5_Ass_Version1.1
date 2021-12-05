@@ -12,7 +12,7 @@ public class Auctioneer{
     private Socket out_soc; // Socket of next node (first bidder)
 
     String	localhost = "127.0.0.1";
-    
+    String hostName;
     int in_port; // Current port number
     int out_port; // Port number of next node (first bidder)
 	int the_bid;
@@ -33,6 +33,22 @@ public class Auctioneer{
 
 		System.out.println("Auctioneer: " +in_port+ " of distributed lottery is active ....");
 
+		createBidFile(); // Call to create and instantiate file
+
+		System.out.println("Auctioneer: " +in_port+ " -  STARTING AUCTION  with price = "+the_bid);
+
+		letsPause();
+		createNodeSockOut();
+		letsPause();
+		closeNodeSockOut();
+		createServerSock();
+		acceptServerSock();
+		letsPause();
+		closeServerSock();
+	 }
+
+	 // Create bid.txt file
+	private void createBidFile(){
 		// Create and instantiate the file named bid.txt with the initial price (the_bid)
 		try {
 			// Create the file
@@ -53,10 +69,10 @@ public class Auctioneer{
 		catch (IOException e) {
 			System.out.println("Cannot create the file "+e);
 		}
+	}
 
-		System.out.println("Auctioneer: " +in_port+ " -  STARTING AUCTION  with price = "+the_bid);
-
-		// Have a wee pause before the next bit
+	// Have a wee pause before the next bit
+	private void letsPause(){
 		try{
 			Thread.sleep(1000);
 		}
@@ -66,10 +82,12 @@ public class Auctioneer{
 		catch (IllegalArgumentException e){
 			System.out.println("Incorrect value entered: "+e);
 		}
+	}
 
-
+	// Create the socket to the next node
+	private void createNodeSockOut(){
 		// Create a new socket to send the token to
-	    try {
+		try {
 			out_soc = new Socket(localhost, out_port);
 		}
 		catch (UnknownHostException e){
@@ -82,7 +100,12 @@ public class Auctioneer{
 			System.out.println("Incorrect Port number: "+e);
 		}
 
-		// Check that the connection was successful
+		// Check success
+		sockConnectSuccess();
+	}
+
+	// Check that the connection was successful
+	private void sockConnectSuccess(){
 		try {
 			if (out_soc.isConnected()){
 				// Confirm that connection was accepted
@@ -92,37 +115,26 @@ public class Auctioneer{
 		catch (Exception e){
 			System.out.println("Could not connect to "+out_port+": Token not sent.");
 		}
+	}
 
-		// Have a wee pause before closing the new socket
-	    try{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e){
-			System.out.println("Sleep interrupted: "+e);
-		}
-		catch (IllegalArgumentException e){
-			System.out.println("Incorrect value entered: "+e);
-		}
-	    
-	    // Close the new socket (pass the token)
+	// Close new socket
+	private void closeNodeSockOut(){
+		// Close the new socket (pass the token)
 		try {
 			out_soc.close();
 		}
 		catch (IOException e){
 			System.out.println("Socket failed to close: "+e);
 		}
+		// call to pause
+		letsPause();
 
-		// Have another pause
-		try{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e){
-			System.out.println("Sleep interrupted: "+e);
-		}
-		catch (IllegalArgumentException e){
-			System.out.println("Incorrect value entered: "+e);
-		}
+		// Call to check success
+		sockCloseSuccess();
+	}
 
+	// Check closed successfully
+	private void sockCloseSuccess(){
 		// Check that the connection was successfully closed
 		try {
 			if (out_soc.isClosed()){
@@ -133,8 +145,11 @@ public class Auctioneer{
 		catch (Exception e){
 			System.out.println("** Socket to first bidder "+out_port+" is still open **");
 		}
+	}
 
-	    // Create the server socket with the current port
+	// Create server socket
+	private void createServerSock(){
+		// Create the server socket with the current port
 		try {
 			in_ss = new ServerSocket(in_port);
 
@@ -147,7 +162,10 @@ public class Auctioneer{
 		catch (IllegalArgumentException e){
 			System.out.println("Incorrect port number: "+e);
 		}
+	}
 
+	// Accept server socket
+	private void acceptServerSock(){
 		// Accept the server socket and the token
 		try {
 			in_soc = in_ss.accept();
@@ -158,18 +176,10 @@ public class Auctioneer{
 		catch (IOException e){
 			System.out.println("Connection could not be made: "+e);
 		}
+	}
 
-		// Have a pause before closing the socket
-		try{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e){
-			System.out.println("Sleep interrupted: "+e);
-		}
-		catch (IllegalArgumentException e){
-			System.out.println("Incorrect value entered: "+e);
-		}
-
+	// Close the server socket
+	private void closeServerSock(){
 		// Close the current socket
 		try {
 			in_ss.close();
@@ -180,21 +190,11 @@ public class Auctioneer{
 		catch (IOException e){
 			System.out.println("Cannot close Server Socket: "+e);
 		}
-
-		// Have a wee pause
-	    try{
-			Thread.sleep(1000);
-		}
-		catch (InterruptedException e){
-			System.out.println("Sleep interrupted: "+e);
-		}
-		catch (IllegalArgumentException e){
-			System.out.println("Incorrect value entered: "+e);
-		}
-	 }
+		letsPause();
+	}
 
 	// Call from Bidder to read the current bid on file
-    public synchronized int getThe_bid(){
+	public synchronized int getThe_bid(){
 		try {
 			BufferedReader br = new BufferedReader (new FileReader("bid.txt"));
 			current_bid = Integer.parseInt(br.readLine());
@@ -242,27 +242,25 @@ public class Auctioneer{
 			System.out.println("Could not update the current bid value: "+e);
 		 }
 	}
+
+	// Get the IP address and the port number of the current  node
+	private void getIPandPort(){
+		try{
+			InetAddress n_inet_address =  InetAddress.getLocalHost() ;
+			hostName = n_inet_address.getHostName();
+			System.out.println ("node hostname is " +hostName+":"+n_inet_address);
+		}
+		catch (java.net.UnknownHostException e){
+			System.out.println(e);
+			System.exit(1);
+		}
+	}
     
     public static void main (String[] args){
-	
-		String n_host_name = "";
-	
 		if (args.length != 2) {
 	    	System.out.print("Usage: Auctioneer [port number] [forward port number]");
 	    	System.exit(1);
 		}
-	
-		// get the IP address and the port number of the node
- 		try{
-	    	InetAddress n_inet_address =  InetAddress.getLocalHost() ;
-	    	n_host_name = n_inet_address.getHostName();
-	    	System.out.println ("node hostname is " +n_host_name+":"+n_inet_address);
-    		}
-    	catch (java.net.UnknownHostException e){
-	    System.out.println(e);
-	    System.exit(1);
-    	} 
-	
     	Auctioneer a = new Auctioneer(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
     }
 }
